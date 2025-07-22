@@ -27,18 +27,26 @@ export default function AuthPage() {
     userId: '',
   });
 
+  const stepOrder: Step[] = [
+    'email',
+    'name-age',
+    'password',
+    'congrats',
+    'username',
+    'summary',
+  ];
+
   const nextStep = (newData: any) => {
     setFormData((prev) => ({ ...prev, ...newData }));
-    const stepOrder: Step[] = [
-      'email',
-      'name-age',
-      'password',
-      'congrats',
-      'username',
-      'summary',
-    ];
     const currentIndex = stepOrder.indexOf(step);
     setStep(stepOrder[currentIndex + 1]);
+  };
+
+  const prevStep = () => {
+    const currentIndex = stepOrder.indexOf(step);
+    if (currentIndex > 0) {
+      setStep(stepOrder[currentIndex - 1]);
+    }
   };
 
   const stepComponents = {
@@ -51,12 +59,14 @@ export default function AuthPage() {
     'name-age': (
       <StepNameAge
         onNext={(data) => nextStep(data)}
+        onBack={prevStep}
         defaultValue={{ name: formData.name, age: formData.age }}
       />
     ),
     password: (
       <StepPassword
         onNext={(data) => nextStep({ password: data })}
+        onBack={prevStep}
       />
     ),
     congrats: <StepCongrats onNext={() => nextStep({})} />,

@@ -1,5 +1,4 @@
-// src/components/auth/StepUsername.tsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 
@@ -13,28 +12,32 @@ export default function StepUsername({
   defaultValue = '',
 }: StepUsernameProps) {
   const [username, setUsername] = useState(defaultValue);
-  const [available, setAvailable] = useState(true); // Simulate always available
   const [error, setError] = useState('');
+  const [touched, setTouched] = useState(false);
+  const [hovering, setHovering] = useState(false);
 
-  useEffect(() => {
-    if (username.length >= 3) {
-      // Simulated availability check
-      const takenUsernames = ['admin', 'test', 'user'];
-      setAvailable(!takenUsernames.includes(username.toLowerCase()));
-    }
-  }, [username]);
+  const takenUsernames = ['admin', 'test', 'user'];
+
+  const trimmed = username.trim();
+  const isTyped = trimmed.length > 0;
+  const isValidChars = /^[a-zA-Z0-9_-]+$/.test(trimmed); // only allowed characters
+  const hasLetter = /[a-zA-Z]/.test(trimmed); // must contain at least one letter
+  const isValidFormat = isValidChars && hasLetter;
+  const isAvailable =
+    isTyped && isValidFormat && !takenUsernames.includes(trimmed.toLowerCase());
+  const isFormValid = isAvailable;
 
   const handleNext = () => {
-    if (!username || username.length < 3) {
-      setError('Username must be at least 3 characters.');
+    if (!isTyped || !isValidFormat) {
+      setError("Hey man, what would I even call you if you don't have a username?");
       return;
     }
-    if (!available) {
+    if (!isAvailable) {
       setError('That username is taken. Try another.');
       return;
     }
     setError('');
-    onNext(username.trim());
+    onNext(trimmed);
   };
 
   return (
@@ -42,32 +45,64 @@ export default function StepUsername({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="flex flex-col space-y-4 text-center"
+      className="flex flex-col space-y-4 text-center relative"
     >
-      <h2 className="text-2xl font-bold">Choose a Username</h2>
-      <p className="text-sm text-gray-600">
-        This will be your unique identity across the app.
-      </p>
+      <h2 className="text-2xl font-bold text-gray-800">Choose a Username</h2>
+      <p className="text-sm text-gray-600">This will be your unique identity across the app.</p>
 
+      {/* Input */}
       <input
         type="text"
-        className="input input-bordered w-full text-center"
         value={username}
-        onChange={(e) => setUsername(e.target.value)}
+        onChange={(e) => {
+          setUsername(e.target.value);
+          setTouched(true);
+        }}
+        onBlur={() => setTouched(true)}
         placeholder="yourcoolname123"
+        className={`w-full px-4 py-3 border rounded-md shadow-sm text-center focus:outline-none focus:ring-2 text-gray-800
+          ${
+            touched
+              ? isFormValid
+                ? 'border-green-500 focus:ring-green-500'
+                : 'border-red-500 focus:ring-red-500'
+              : 'border-gray-300 focus:ring-blue-500'
+          }
+        `}
       />
 
-      {!available && (
-        <p className="text-sm text-red-500">This username is taken.</p>
-      )}
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {/* Format Helper */}
+      <p className="text-xs text-gray-500 -mt-2">
+        Letters, numbers, underscores (_) and dashes (-). Must contain at least one letter.
+      </p>
 
-      <button
-        onClick={handleNext}
-        className="btn btn-primary flex items-center justify-center gap-2 self-end"
+      {/* Error Text */}
+      {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
+
+      {/* Continue Button with hover message */}
+      <div
+        className="relative self-end"
+        onMouseEnter={() => setHovering(true)}
+        onMouseLeave={() => setHovering(false)}
       >
-        Continue <FiArrowRight />
-      </button>
+        {!isFormValid && hovering && (
+          <div className="absolute -top-10 right-0 z-10 bg-black text-white text-xs rounded px-3 py-2 shadow-lg whitespace-nowrap">
+            Hey man, what would I even call you if you don't have a username?
+          </div>
+        )}
+
+        <button
+          onClick={handleNext}
+          disabled={!isFormValid}
+          className={`flex items-center gap-2 px-5 py-2 rounded-md font-medium transition
+            ${isFormValid
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'}
+          `}
+        >
+          Continue <FiArrowRight />
+        </button>
+      </div>
     </motion.div>
   );
 }

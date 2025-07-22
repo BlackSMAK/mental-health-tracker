@@ -1,4 +1,3 @@
-// src/components/auth/StepSummary.tsx
 import { FiCheckCircle, FiArrowRight } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 
@@ -21,26 +20,45 @@ export default function StepSummary({ data, onNext }: StepSummaryProps) {
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="space-y-6 text-center"
+      className="flex flex-col items-center text-center space-y-6"
     >
-      <div className="text-green-500 text-5xl flex justify-center">
+      {/* Success Icon */}
+      <div className="text-green-500 text-5xl">
         <FiCheckCircle />
       </div>
 
-      <h2 className="text-3xl font-bold">You're All Set!</h2>
-      <p className="text-gray-600">Here’s what we’ve got for your profile:</p>
+      {/* Heading */}
+      <h2 className="text-3xl font-bold text-gray-800">You're All Set!</h2>
+      <p className="text-sm text-gray-600">Here's what we've got for your profile:</p>
 
-      <div className="bg-base-200 rounded-xl p-4 text-left space-y-2 w-full max-w-md mx-auto shadow-md">
-        <p><strong>Email:</strong> {email}</p>
-        <p><strong>Name:</strong> {name}</p>
-        <p><strong>Age:</strong> {age}</p>
-        <p><strong>Username:</strong> @{username}</p>
-        <p><strong>User ID:</strong> {userId}</p>
+      {/* Summary Card */}
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 text-left w-full max-w-md space-y-3 text-gray-800">
+        <div className="flex justify-between">
+          <span className="font-medium">Email:</span>
+          <span>{email}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="font-medium">Name:</span>
+          <span>{name}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="font-medium">Age:</span>
+          <span>{age}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="font-medium">Username:</span>
+          <span>{username}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="font-medium">User ID:</span>
+          <span>{userId}</span>
+        </div>
       </div>
 
+      {/* Continue Button */}
       <button
         onClick={onNext}
-        className="btn btn-success flex items-center gap-2 mx-auto"
+        className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md font-medium flex items-center gap-2 transition"
       >
         Go to Dashboard <FiArrowRight />
       </button>
