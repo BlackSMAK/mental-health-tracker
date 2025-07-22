@@ -1,9 +1,14 @@
-// src/pages/index.tsx
+'use client';
+
 import { motion } from 'framer-motion';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useState } from 'react';
+import { Settings } from 'lucide-react';
 
 export default function HomePage() {
+  const [isHovered, setIsHovered] = useState(false);
+
   return (
     <>
       <Head>
@@ -14,7 +19,7 @@ export default function HomePage() {
         {/* Header */}
         <header className="flex justify-between items-center p-6">
           <h1 className="text-2xl font-bold text-blue-600">MindfulTrack</h1>
-          <Link href="/dashboard">
+          <Link href="/auth">
             <button className="btn btn-primary btn-sm rounded-full px-5">Get Started</button>
           </Link>
         </header>
@@ -32,7 +37,7 @@ export default function HomePage() {
           <p className="text-lg max-w-xl mb-8 text-gray-600">
             Track your mood, reflect with daily journals, and get AI-powered insights to better understand yourself.
           </p>
-          <Link href="/dashboard">
+          <Link href="/auth">
             <button className="btn btn-primary px-6 py-3 rounded-full shadow-lg hover:scale-105 transition">
               Get Started
             </button>
@@ -74,6 +79,25 @@ export default function HomePage() {
         <footer className="text-center text-sm text-gray-500 py-6 mt-auto">
           © {new Date().getFullYear()} MindfulTrack. Built by Syed Muhammad Ahmed Khalid.
         </footer>
+
+        {/* Settings Icon (non-functional for now) */}
+        <div
+          className="fixed bottom-5 right-5 z-50"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <motion.div
+            initial={false}
+            animate={{ width: isHovered ? 220 : 50 }}
+            transition={{ duration: 0.3 }}
+            className="bg-white border border-gray-300 shadow-lg rounded-full px-4 py-2 flex items-center overflow-hidden"
+          >
+            <Settings className="text-gray-600" size={20} />
+            {isHovered && (
+              <div className="ml-3 text-sm text-gray-600">Settings (Coming Soon)</div>
+            )}
+          </motion.div>
+        </div>
       </main>
     </>
   );
