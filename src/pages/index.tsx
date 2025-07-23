@@ -2,12 +2,17 @@
 
 import { motion } from 'framer-motion';
 import Head from 'next/head';
-import Link from 'next/link';
 import { useState } from 'react';
 import { Settings } from 'lucide-react';
+import { useRouter } from 'next/navigation'; // ✅ Routing hook
 
 export default function HomePage() {
   const [isHovered, setIsHovered] = useState(false);
+  const router = useRouter(); // ✅ Used for redirection
+
+  const handleGetStarted = () => {
+    router.push('/auth'); // ✅ Navigate to auth page
+  };
 
   return (
     <>
@@ -19,9 +24,12 @@ export default function HomePage() {
         {/* Header */}
         <header className="flex justify-between items-center p-6">
           <h1 className="text-2xl font-bold text-blue-600">MindfulTrack</h1>
-          <Link href="/auth">
-            <button className="btn btn-primary btn-sm rounded-full px-5">Get Started</button>
-          </Link>
+          <button
+            onClick={handleGetStarted}
+            className="btn btn-primary btn-sm rounded-full px-5"
+          >
+            Login | Sign-up
+          </button>
         </header>
 
         {/* Hero Section */}
@@ -37,11 +45,12 @@ export default function HomePage() {
           <p className="text-lg max-w-xl mb-8 text-gray-600">
             Track your mood, reflect with daily journals, and get AI-powered insights to better understand yourself.
           </p>
-          <Link href="/auth">
-            <button className="btn btn-primary px-6 py-3 rounded-full shadow-lg hover:scale-105 transition">
-              Get Started
-            </button>
-          </Link>
+          <button
+            onClick={handleGetStarted}
+            className="btn btn-primary px-6 py-3 rounded-full shadow-lg hover:scale-105 transition"
+          >
+            Get Started
+          </button>
         </motion.section>
 
         {/* Features Section */}
@@ -80,7 +89,7 @@ export default function HomePage() {
           © {new Date().getFullYear()} MindfulTrack. Built by Syed Muhammad Ahmed Khalid.
         </footer>
 
-        {/* Settings Icon (non-functional for now) */}
+        {/* Settings Icon */}
         <div
           className="fixed bottom-5 right-5 z-50"
           onMouseEnter={() => setIsHovered(true)}

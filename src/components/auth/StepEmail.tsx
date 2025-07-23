@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { FiArrowRight } from 'react-icons/fi';
+import { FiArrowRight, FiArrowLeft } from 'react-icons/fi';
 
 interface StepEmailProps {
   onNext: (email: string) => void;
+  onBack?: () => void;
   defaultValue?: string;
 }
 
-export default function StepEmail({ onNext, defaultValue = '' }: StepEmailProps) {
+export default function StepEmail({ onNext, onBack, defaultValue = '' }: StepEmailProps) {
   const [email, setEmail] = useState(defaultValue);
   const [error, setError] = useState('');
 
@@ -36,17 +37,30 @@ export default function StepEmail({ onNext, defaultValue = '' }: StepEmailProps)
 
       {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
 
-      <button
-        onClick={handleSubmit}
-        disabled={!isEmailValid}
-        className={`flex items-center justify-center gap-2 self-end w-fit ml-auto px-5 py-2 rounded-md transition font-medium
-          ${isEmailValid
-            ? 'bg-blue-600 text-white hover:bg-blue-700'
-            : 'bg-gray-300 text-gray-500 cursor-not-allowed'}
-        `}
-      >
-        Continue <FiArrowRight />
-      </button>
+      <div className="flex justify-between items-center pt-4">
+        {/* Styled Back Button (left-aligned) */}
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition font-medium"
+          >
+            <FiArrowLeft /> Back
+          </button>
+        )}
+
+        {/* Continue Button (right-aligned) */}
+        <button
+          onClick={handleSubmit}
+          disabled={!isEmailValid}
+          className={`flex items-center gap-2 px-5 py-2 rounded-md font-medium transition
+            ${isEmailValid
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'}
+          `}
+        >
+          Continue <FiArrowRight />
+        </button>
+      </div>
     </div>
   );
 }
