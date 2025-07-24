@@ -15,15 +15,46 @@ export default function LoginOrSignup({
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [showSplash, setShowSplash] = useState(false);
 
   const handleLogin = () => {
     if (!identifier || !password) {
       setError('Please fill in both fields.');
       return;
     }
+
     setError('');
-    onLogin({ identifier, password });
+    setShowSplash(true);
+
+    // Simulate loading
+    setTimeout(() => {
+      onLogin({ identifier, password }); // actual login callback
+    }, 2500);
   };
+
+  if (showSplash) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex flex-col items-center justify-center min-h-[300px] space-y-6"
+      >
+        <motion.h1
+          initial={{ scale: 0.8 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="text-3xl font-bold text-blue-600"
+        >
+          MindfulTrack
+        </motion.h1>
+        <motion.div
+          className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"
+          aria-label="Loading spinner"
+        />
+        <p className="text-gray-500 text-sm">Getting things ready...</p>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -59,14 +90,12 @@ export default function LoginOrSignup({
         </button>
       </div>
 
-      {/* Divider */}
       <div className="flex items-center w-full max-w-xs">
         <div className="flex-grow h-px bg-gray-300" />
         <span className="px-3 text-gray-400 text-sm">or</span>
         <div className="flex-grow h-px bg-gray-300" />
       </div>
 
-      {/* Signup Redirect */}
       <div className="space-y-2">
         <p className="text-sm text-gray-600">New here?</p>
         <button

@@ -1,15 +1,17 @@
 import { useState } from 'react';
+import { useRouter } from 'next/router'; // ✅ Add this
 import { AnimatePresence, motion } from 'framer-motion';
+
 import StepEmail from '@/components/auth/StepEmail';
 import StepNameAge from '@/components/auth/StepNameAge';
 import StepPassword from '@/components/auth/StepPassword';
 import StepCongrats from '@/components/auth/StepCongrats';
 import StepUsername from '@/components/auth/StepUsername';
 import StepSummary from '@/components/auth/StepSummary';
-import LoginOrSignup from '@/components/auth/LoginOrSignup'; // ✅ import
+import LoginOrSignup from '@/components/auth/LoginOrSignup';
 
 type Step =
-  | 'login' // ✅ New step
+  | 'login'
   | 'email'
   | 'name-age'
   | 'password'
@@ -18,7 +20,8 @@ type Step =
   | 'summary';
 
 export default function AuthPage() {
-  const [step, setStep] = useState<Step>('login'); // ✅ Start at login
+  const router = useRouter(); // ✅ Hook for redirection
+  const [step, setStep] = useState<Step>('login');
   const [formData, setFormData] = useState({
     email: '',
     name: '',
@@ -53,24 +56,27 @@ export default function AuthPage() {
 
   const handleLogin = (credentials: { identifier: string; password: string }) => {
     console.log('Login from /auth:', credentials);
-    // Optionally handle login logic
+
+    // ✅ Simulate login (this should later be replaced with actual auth logic)
+    setTimeout(() => {
+      router.push('/dashboard'); // ✅ Redirect to dashboard
+    }, 500);
   };
 
   const stepComponents = {
     login: (
       <LoginOrSignup
         onLogin={handleLogin}
-        onSignupClick={() => setStep('email')} // ✅ this triggers actual sign up flow
+        onSignupClick={() => setStep('email')}
       />
     ),
     email: (
       <StepEmail
         onNext={(data) => nextStep({ email: data })}
-        onBack={prevStep} // ✅ Back handler
+        onBack={prevStep}
         defaultValue={formData.email}
       />
     ),
-
     'name-age': (
       <StepNameAge
         onNext={(data) => nextStep(data)}
@@ -96,7 +102,7 @@ export default function AuthPage() {
         defaultValue={formData.username}
       />
     ),
-    summary: <StepSummary data={formData} onNext={() => {}} />,
+    summary: <StepSummary data={formData} onNext={() => setStep('login')} />,
   };
 
   return (
