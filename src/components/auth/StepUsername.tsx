@@ -20,7 +20,7 @@ export default function StepUsername({
 
   const trimmed = username.trim();
   const isTyped = trimmed.length > 0;
-  const isValidChars = /^[a-zA-Z0-9_-]+$/.test(trimmed); // only allowed characters
+  const isValidChars = /^[a-zA-Z0-9_-]+$/.test(trimmed); // allowed characters
   const hasLetter = /[a-zA-Z]/.test(trimmed); // must contain at least one letter
   const isValidFormat = isValidChars && hasLetter;
   const isAvailable =
@@ -28,15 +28,20 @@ export default function StepUsername({
   const isFormValid = isAvailable;
 
   const handleNext = () => {
+    console.log('handleNext called with:', trimmed);
+
     if (!isTyped || !isValidFormat) {
       setError("Hey man, what would I even call you if you don't have a username?");
       return;
     }
+
     if (!isAvailable) {
       setError('That username is taken. Try another.');
       return;
     }
+
     setError('');
+    console.log('Calling onNext with:', trimmed);
     onNext(trimmed);
   };
 
@@ -50,7 +55,6 @@ export default function StepUsername({
       <h2 className="text-2xl font-bold text-gray-800">Choose a Username</h2>
       <p className="text-sm text-gray-600">This will be your unique identity across the app.</p>
 
-      {/* Input */}
       <input
         type="text"
         value={username}
@@ -71,15 +75,12 @@ export default function StepUsername({
         `}
       />
 
-      {/* Format Helper */}
       <p className="text-xs text-gray-500 -mt-2">
         Letters, numbers, underscores (_) and dashes (-). Must contain at least one letter.
       </p>
 
-      {/* Error Text */}
       {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
 
-      {/* Continue Button with hover message */}
       <div
         className="relative self-end"
         onMouseEnter={() => setHovering(true)}
@@ -93,7 +94,7 @@ export default function StepUsername({
 
         <button
           onClick={handleNext}
-          disabled={!isFormValid}
+          // disabled={!isFormValid} // ← UNCOMMENT this later if needed
           className={`flex items-center gap-2 px-5 py-2 rounded-md font-medium transition
             ${isFormValid
               ? 'bg-blue-600 text-white hover:bg-blue-700'

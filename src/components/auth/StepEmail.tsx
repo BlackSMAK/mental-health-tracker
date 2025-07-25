@@ -20,7 +20,7 @@ export default function StepEmail({ onNext, onBack, defaultValue = '' }: StepEma
       return;
     }
     setError('');
-    onNext(email);
+    onNext(email.trim());
   };
 
   return (

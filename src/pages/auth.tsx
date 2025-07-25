@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useRouter } from 'next/router'; // ✅ Add this
+import { useRouter } from 'next/router';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import StepEmail from '@/components/auth/StepEmail';
@@ -7,8 +7,8 @@ import StepNameAge from '@/components/auth/StepNameAge';
 import StepPassword from '@/components/auth/StepPassword';
 import StepCongrats from '@/components/auth/StepCongrats';
 import StepUsername from '@/components/auth/StepUsername';
-import StepSummary from '@/components/auth/StepSummary';
 import LoginOrSignup from '@/components/auth/LoginOrSignup';
+import { supabase } from '@/lib/supabaseClient';
 
 type Step =
   | 'login'
@@ -17,11 +17,14 @@ type Step =
   | 'password'
   | 'congrats'
   | 'username'
-  | 'summary';
+  | 'summary'
+  | 'loading'
+  | 'error';
 
 export default function AuthPage() {
-  const router = useRouter(); // ✅ Hook for redirection
+  const router = useRouter();
   const [step, setStep] = useState<Step>('login');
+  const [errorMessage, setErrorMessage] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     name: '',
@@ -54,13 +57,118 @@ export default function AuthPage() {
     }
   };
 
-  const handleLogin = (credentials: { identifier: string; password: string }) => {
-    console.log('Login from /auth:', credentials);
+  const handleLogin = async (credentials: { identifier: string; password: string }) => {
+    try {
+      const { identifier: email, password } = credentials;
 
-    // ✅ Simulate login (this should later be replaced with actual auth logic)
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error || !data.user) {
+        setErrorMessage('Invalid email or password.');
+        setStep('error');
+        return;
+      }
+
+      router.push('/dashboard');
+    } catch (err) {
+      console.error('Login error:', err);
+      setErrorMessage('Something went wrong. Please try again.');
+      setStep('error');
+    }
+  };
+
+  const generateUID = async (): Promise<string> => {
+    let uid = '';
+    let exists = true;
+
+    while (exists) {
+      uid = 'UID_' + Math.floor(Math.random() * 100000);
+      const { data } = await supabase
+        .from('users')
+        .select('userid')
+        .eq('userid', uid)
+        .maybeSingle();
+
+      exists = !!data;
+    }
+
+    return uid;
+  };
+
+  const handleUsernameSubmit = async (username: string) => {
+    setStep('loading');
+    const { email, name, age, password } = formData;
+
+    if (!email || !name || !age || !password || !username) {
+      setErrorMessage('Missing required fields. Please start over.');
+      return setStep('error');
+    }
+
+    const numericAge = Number(age);
+    if (isNaN(numericAge) || numericAge <= 0) {
+      setErrorMessage('Invalid age. Please enter a number greater than 0.');
+      return setStep('error');
+    }
+
+    try {
+      const { data: existingUsername, error: usernameError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', username)
+        .maybeSingle();
+
+      if (usernameError) throw new Error('Error checking username.');
+      if (existingUsername) {
+        setErrorMessage('Username already in use. Please choose another.');
+        return setStep('username');
+      }
+
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (authError || !authData?.user?.id) {
+        throw new Error('Failed to create account in Supabase Auth.');
+      }
+
+      const supabaseUserId = authData.user.id;
+      const userId = await generateUID();
+
+      const { error: insertError } = await supabase.from('users').insert([
+        {
+          id: supabaseUserId,
+          email,
+          name,
+          age: numericAge,
+          username,
+          userid: userId,
+          avatar_url: '',
+          created_at: new Date().toISOString(),
+        },
+      ]);
+
+      if (insertError) {
+        throw new Error('Error inserting user into users table.');
+      }
+
+      setFormData((prev) => ({ ...prev, userId, username }));
+      setStep('summary');
+    } catch (err: any) {
+      console.error('Signup failed:', err.message);
+      setErrorMessage('Something went wrong. Please try again.');
+      setStep('error');
+    }
+  };
+
+  const handleContinueFromSummary = () => {
+    setStep('loading');
     setTimeout(() => {
-      router.push('/dashboard'); // ✅ Redirect to dashboard
-    }, 500);
+      router.push('/login');
+    }, 2000); // simulate loading before routing (optional)
   };
 
   const stepComponents = {
@@ -93,16 +201,45 @@ export default function AuthPage() {
     congrats: <StepCongrats onNext={() => nextStep()} />,
     username: (
       <StepUsername
-        onNext={(data) =>
-          nextStep({
-            username: data,
-            userId: 'UID_' + Math.floor(Math.random() * 100000),
-          })
-        }
+        onNext={handleUsernameSubmit}
         defaultValue={formData.username}
       />
     ),
-    summary: <StepSummary data={formData} onNext={() => setStep('login')} />,
+    summary: (
+      <div className="space-y-4 text-center">
+        <h2 className="text-lg font-semibold text-blue-700">
+          🎉 Almost done!
+        </h2>
+        <p className="text-gray-700">
+          Please check your email and click the verification link from Supabase to activate your account.
+        </p>
+        <p className="text-sm text-gray-500">
+          You must verify your email before logging in.
+        </p>
+        <button
+          onClick={handleContinueFromSummary}
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+        >
+          I have verified my email – Continue
+        </button>
+      </div>
+    ),
+    loading: (
+      <div className="text-center py-8 font-medium text-blue-600">
+        Setting up your dashboard, please wait...
+      </div>
+    ),
+    error: (
+      <div className="text-center text-red-600 space-y-4">
+        <p className="font-semibold">{errorMessage}</p>
+        <button
+          onClick={() => setStep('login')}
+          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition"
+        >
+          Back to Login
+        </button>
+      </div>
+    ),
   };
 
   return (
