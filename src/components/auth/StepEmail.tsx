@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { FiArrowRight, FiArrowLeft } from 'react-icons/fi';
+import { supabase } from '@/lib/supabaseClient';
 
 interface StepEmailProps {
   onNext: (email: string) => void;
@@ -10,16 +11,40 @@ interface StepEmailProps {
 export default function StepEmail({ onNext, onBack, defaultValue = '' }: StepEmailProps) {
   const [email, setEmail] = useState(defaultValue);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isEmailValid = emailRegex.test(email);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isEmailValid) {
       setError('Please enter a valid email address');
       return;
     }
+
+    setLoading(true);
     setError('');
+
+    // 🔍 Check if email already exists in `users` table
+    const { data: existingUser, error: dbError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email.trim())
+      .maybeSingle();
+
+    setLoading(false);
+
+    if (dbError) {
+      console.error('Email check error:', dbError.message);
+      setError('Something went wrong. Please try again.');
+      return;
+    }
+
+    if (existingUser) {
+      setError('This email is already registered. Please log in instead.');
+      return;
+    }
+
     onNext(email.trim());
   };
 
@@ -38,7 +63,6 @@ export default function StepEmail({ onNext, onBack, defaultValue = '' }: StepEma
       {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
 
       <div className="flex justify-between items-center pt-4">
-        {/* Styled Back Button (left-aligned) */}
         {onBack && (
           <button
             onClick={onBack}
@@ -48,17 +72,16 @@ export default function StepEmail({ onNext, onBack, defaultValue = '' }: StepEma
           </button>
         )}
 
-        {/* Continue Button (right-aligned) */}
         <button
           onClick={handleSubmit}
-          disabled={!isEmailValid}
+          disabled={!isEmailValid || loading}
           className={`flex items-center gap-2 px-5 py-2 rounded-md font-medium transition
-            ${isEmailValid
+            ${isEmailValid && !loading
               ? 'bg-blue-600 text-white hover:bg-blue-700'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'}
           `}
         >
-          Continue <FiArrowRight />
+          {loading ? 'Checking...' : 'Continue'} <FiArrowRight />
         </button>
       </div>
     </div>

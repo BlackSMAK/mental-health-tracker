@@ -7,6 +7,7 @@ import StepNameAge from '@/components/auth/StepNameAge';
 import StepPassword from '@/components/auth/StepPassword';
 import StepCongrats from '@/components/auth/StepCongrats';
 import StepUsername from '@/components/auth/StepUsername';
+import StepSummary from '@/components/auth/StepSummary';
 import LoginOrSignup from '@/components/auth/LoginOrSignup';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -17,6 +18,7 @@ type Step =
   | 'password'
   | 'congrats'
   | 'username'
+  | 'verify'
   | 'summary'
   | 'loading'
   | 'error';
@@ -41,6 +43,7 @@ export default function AuthPage() {
     'password',
     'congrats',
     'username',
+    'verify',
     'summary',
   ];
 
@@ -156,7 +159,7 @@ export default function AuthPage() {
       }
 
       setFormData((prev) => ({ ...prev, userId, username }));
-      setStep('summary');
+      setStep('verify');
     } catch (err: any) {
       console.error('Signup failed:', err.message);
       setErrorMessage('Something went wrong. Please try again.');
@@ -164,11 +167,11 @@ export default function AuthPage() {
     }
   };
 
-  const handleContinueFromSummary = () => {
+  const handleContinueFromEmailVerification = () => {
     setStep('loading');
     setTimeout(() => {
-      router.push('/login');
-    }, 2000); // simulate loading before routing (optional)
+      setStep('summary');
+    }, 2000);
   };
 
   const stepComponents = {
@@ -205,7 +208,7 @@ export default function AuthPage() {
         defaultValue={formData.username}
       />
     ),
-    summary: (
+    verify: (
       <div className="space-y-4 text-center">
         <h2 className="text-lg font-semibold text-blue-700">
           🎉 Almost done!
@@ -217,12 +220,24 @@ export default function AuthPage() {
           You must verify your email before logging in.
         </p>
         <button
-          onClick={handleContinueFromSummary}
+          onClick={handleContinueFromEmailVerification}
           className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
         >
           I have verified my email – Continue
         </button>
       </div>
+    ),
+    summary: (
+      <StepSummary
+        data={{
+          email: formData.email,
+          name: formData.name,
+          age: formData.age,
+          username: formData.username,
+          userId: formData.userId,
+        }}
+        onNext={() => setStep('login')}
+      />
     ),
     loading: (
       <div className="text-center py-8 font-medium text-blue-600">
