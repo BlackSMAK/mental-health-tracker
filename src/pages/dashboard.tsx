@@ -195,7 +195,7 @@ const handleDeleteAccount = async () => {
       if (error) throw new Error(`Failed to delete from ${table}: ${error.message}`);
     }
 
-    // ✅ Securely delete from Auth using your API route
+    // Securely delete from Auth using your API route
     const res = await fetch('/api/delete-user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -212,6 +212,68 @@ const handleDeleteAccount = async () => {
     alert(`Error: ${err instanceof Error ? err.message : 'Unknown error occurred'}`);
   }
 };
+
+  const fetchAISuggestion = async (input: {
+  mood: number,
+  sleep: number,
+  journal: string
+}): Promise<string> => {
+  const prompts = [
+    {
+      url: "https://api.groq.com/openai/v1/chat/completions", // ✅ Replace with your actual endpoints
+      key: process.env.NEXT_PUBLIC_GROQ_API_KEY_1
+    },
+    {
+      url: "https://api.groq.com/openai/v1/chat/completions",
+      key: process.env.NEXT_PUBLIC_GROQ_API_KEY_2
+    },
+  ];
+
+  const payload = {
+    messages: [
+      {
+        role: 'system',
+        content: 'You are a kind and helpful mental health assistant.'+ 
+                  'Users will provide their mood, sleep hours, and journal entries.'+ 
+                  'Your task is to analyze this information and provide a supportive suggestion or encouragement.'+
+                  'Keep responses concise and positive, friendly tone.'+
+                  'Help them feel understood and motivated to take care of their mental health.'+
+                  'Give energetic and healthy responses.'+
+                  'This is not a chat so the response should be final and a very good and proper one so that the user can feel motivated, encouraged and happy.'
+      },
+      {
+        role: 'user',
+        content: `Mood: ${input.mood}/5\nSleep: ${input.sleep} hrs\nJournal: ${input.journal}\n\n What kind of encouragement or suggestion would you give this person today? Reply as if you are talking to them as a mental health assistant.'`
+      }
+    ],
+    model: 'llama-3.1-8b-instant', // or gpt-3.5/llama3, mixtral-8x7b-32768 if using a proxy to those 
+    temperature: 0.7
+  };
+
+  for (const { url, key } of prompts) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${key}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        const suggestion = json?.choices?.[0]?.message?.content?.trim();
+        if (suggestion) return suggestion;
+      }
+    } catch (err) {
+      console.warn(`AI fallback failed: ${url}`, err);
+    }
+  }
+
+  return 'Try some fresh air or journaling again tomorrow!'; // Final fallback
+};
+
 
 
   const handleSubmit = async () => {
@@ -267,10 +329,30 @@ const handleDeleteAccount = async () => {
       if (sessionResult.error) throw new Error(`Login session error: ${sessionResult.error.message}`);
 
       console.log('🎉 All entries submitted successfully!');
-      setAIResponse({
-        summary: `Mood: ${mood}/5 · Sleep: ${sleep} hrs`,
-        suggestion: `Try some sunlight or a short walk!`,
+      // ✨ Generate AI suggestion using Groq + fallback
+      const aiSuggestion = await fetchAISuggestion({
+          mood: Number(mood),
+          sleep: Number(sleep),
+          journal: journal.trim()
       });
+
+// Update the journal entry with AI suggestion
+const updateResult = await supabase
+  .from('journal_entries')
+  .update({ ai_suggestion: aiSuggestion })
+  .eq('id', journalResult.data?.[0]?.id);
+
+if (updateResult.error) {
+  throw new Error(`Failed to update journal with AI suggestion: ${updateResult.error.message}`);
+}
+
+setAIResponse({
+  summary: `Mood: ${mood}/5 · Sleep: ${sleep} hrs`,
+  suggestion: aiSuggestion,
+});
+
+
+
       setEntrySubmitted(true);
 
       // Refresh AI history
@@ -496,138 +578,174 @@ const handleDeleteAccount = async () => {
   );
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r shadow-lg p-6 hidden md:flex flex-col justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-blue-700 mb-8">MindfulTrack</h1>
-          <nav className="space-y-2">
-            <button
-              onClick={() => setActiveSection('home')}
-              className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
-                activeSection === 'home'
-                  ? 'bg-blue-100 text-blue-700 font-semibold shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <span className="text-xl">🏠</span>
-              <span>Home</span>
-            </button>
-            
-            <button
-              onClick={() => setActiveSection('mood-history')}
-              className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
-                activeSection === 'mood-history'
-                  ? 'bg-blue-100 text-blue-700 font-semibold shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <span className="text-xl">📖</span>
-              <span>Mood History</span>
-            </button>
-            
-            <button
-              onClick={() => setActiveSection('ai-response')}
-              className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
-                activeSection === 'ai-response'
-                  ? 'bg-blue-100 text-blue-700 font-semibold shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <span className="text-xl">🤖</span>
-              <span>AI Response</span>
-            </button>
-            
-            <div className="pt-4 border-t border-gray-200 mt-4 space-y-2">
-              <button disabled className="w-full text-left px-4 py-3 rounded-lg text-gray-400 cursor-not-allowed flex items-center space-x-3">
-                <span className="text-xl">📅</span>
-                <span>Calendar (soon)</span>
-              </button>
-              <button disabled className="w-full text-left px-4 py-3 rounded-lg text-gray-400 cursor-not-allowed flex items-center space-x-3">
-                <span className="text-xl">📊</span>
-                <span>Trends (soon)</span>
-              </button>
-              <button disabled className="w-full text-left px-4 py-3 rounded-lg text-gray-400 cursor-not-allowed flex items-center space-x-3">
-                <span className="text-xl">🧘</span>
-                <span>Resources (soon)</span>
-              </button>
-            </div>
-          </nav>
+  <div className="flex min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    {/* Sidebar */}
+    <aside className="w-64 bg-white border-r shadow-lg p-6 hidden md:flex flex-col justify-between">
+      <div>
+        <h1 className="text-2xl font-bold text-blue-700 mb-8">
+          MindfulTrack<span className="text-xs align-super">®</span>
+        </h1>
+        <nav className="space-y-2">
+          <button
+            onClick={() => setActiveSection('home')}
+            className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
+              activeSection === 'home'
+                ? 'bg-blue-100 text-blue-700 font-semibold shadow-sm'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <span className="text-xl">🏠</span>
+            <span>Home</span>
+          </button>
+
+          <button
+            onClick={() => setActiveSection('mood-history')}
+            className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
+              activeSection === 'mood-history'
+                ? 'bg-blue-100 text-blue-700 font-semibold shadow-sm'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <span className="text-xl">📖</span>
+            <span>Mood History</span>
+          </button>
+
+          <button
+            onClick={() => setActiveSection('ai-response')}
+            className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
+              activeSection === 'ai-response'
+                ? 'bg-blue-100 text-blue-700 font-semibold shadow-sm'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <span className="text-xl">🤖</span>
+            <span>AI Response</span>
+          </button>
+        </nav>
+      </div>
+
+      {/* Footer with social links */}
+<div className="space-y-2 mt-10">
+  <div className="flex justify-center space-x-4">
+    <a
+      href="https://www.linkedin.com/in/syed-muhammad-ahmed-khalid-6b8611336"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="hover:opacity-80 transition-opacity"
+    >
+      <svg
+        className="w-5 h-5 text-blue-600"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path d="M19 0h-14C2.24 0 0 2.24 0 5v14c0 2.76 2.24 5 5 5h14c2.76 0 5-2.24 5-5V5c0-2.76-2.24-5-5-5zm-11 19H5v-9h3v9zm-1.5-10.3C5.53 8.7 4.75 7.91 4.75 7S5.53 5.3 6.5 5.3 8.25 6.09 8.25 7 7.47 8.7 6.5 8.7zm13.5 10.3h-3v-4.7c0-1.13-.02-2.58-1.57-2.58-1.57 0-1.81 1.23-1.81 2.5v4.8h-3v-9h2.88v1.23h.04c.4-.76 1.38-1.56 2.83-1.56 3.03 0 3.59 1.99 3.59 4.58v4.75z" />
+      </svg>
+    </a>
+
+    <a
+      href="https://github.com/BlackSMAK"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="hover:opacity-80 transition-opacity"
+    >
+      <svg
+        className="w-5 h-5 text-gray-800"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path d="M12 0.3C5.37 0.3 0 5.67 0 12.3c0 5.29 3.44 9.78 8.21 11.38.6.11.82-.26.82-.58 0-.29-.01-1.05-.02-2.06-3.34.73-4.04-1.61-4.04-1.61-.55-1.41-1.35-1.79-1.35-1.79-1.1-.75.08-.74.08-.74 1.21.09 1.84 1.24 1.84 1.24 1.08 1.84 2.83 1.31 3.52 1 .11-.78.42-1.31.76-1.61-2.67-.31-5.47-1.34-5.47-5.96 0-1.32.47-2.4 1.24-3.25-.13-.31-.54-1.56.12-3.26 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02 0 2.05.14 3 .4 2.28-1.55 3.3-1.23 3.3-1.23.66 1.7.25 2.95.12 3.26.77.85 1.24 1.93 1.24 3.25 0 4.63-2.81 5.64-5.49 5.94.43.38.81 1.1.81 2.22 0 1.6-.01 2.89-.01 3.28 0 .32.22.7.83.58A12.01 12.01 0 0 0 24 12.3C24 5.67 18.63 0.3 12 0.3z" />
+      </svg>
+    </a>
+
+    <a
+  href="https://www.kaggle.com/smak17"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="text-blue-500 font-bold text-lg hover:text-blue-700 transition-colors"
+>
+  k
+</a>
+
+
+
+  </div>
+  <p className="text-xs text-gray-400 text-center">
+    © 2025 MindfulTrack<span className="align-super text-[0.6rem] ml-0.5">®</span>
+  </p>
+</div>
+
+    </aside>
+
+    {/* Main */}
+    <main className="flex-1 p-6 md:p-10">
+      <div className="flex justify-between items-center mb-8">
+        <div className="text-center w-full md:w-auto">
+          <p className="text-sm text-gray-500">
+            {today.toLocaleDateString('en-US', {
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </p>
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
+            Welcome back, {name}
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            {activeSection === 'home' && 'Dashboard Overview'}
+            {activeSection === 'mood-history' && 'Your Journal History'}
+            {activeSection === 'ai-response' && 'AI Insights & Suggestions'}
+          </p>
         </div>
-        <p className="text-xs text-gray-400 mt-10">© 2025 MindfulTrack</p>
-      </aside>
 
-      {/* Main */}
-      <main className="flex-1 p-6 md:p-10">
-        <div className="flex justify-between items-center mb-8">
-          <div className="text-center w-full md:w-auto">
-            <p className="text-sm text-gray-500">
-              {today.toLocaleDateString('en-US', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </p>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
-              Welcome back, {name}
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              {activeSection === 'home' && 'Dashboard Overview'}
-              {activeSection === 'mood-history' && 'Your Journal History'}
-              {activeSection === 'ai-response' && 'AI Insights & Suggestions'}
-            </p>
-          </div>
+        <div className="relative">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center font-bold text-white shadow-lg hover:shadow-xl transition-all duration-200"
+            onClick={() => setProfileOpen(!profileOpen)}
+          >
+            {name.slice(0, 2).toUpperCase()}
+          </motion.button>
 
-          <div className="relative">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center font-bold text-white shadow-lg hover:shadow-xl transition-all duration-200"
-              onClick={() => setProfileOpen(!profileOpen)}
-            >
-              {name.slice(0, 2).toUpperCase()}
-            </motion.button>
-            
-            <AnimatePresence>
-              {profileOpen && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9, y: -10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                  className="absolute right-0 mt-3 bg-white border border-gray-200 rounded-lg shadow-xl z-20 w-48 overflow-hidden"
+          <AnimatePresence>
+            {profileOpen && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                className="absolute right-0 mt-3 bg-white border border-gray-200 rounded-lg shadow-xl z-20 w-48 overflow-hidden"
+              >
+                <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                  <p className="text-sm font-semibold text-gray-800">{name}</p>
+                  <p className="text-xs text-gray-500">{userid}</p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-150 flex items-center space-x-2"
                 >
-                  <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-                    <p className="text-sm font-semibold text-gray-800">{name}</p>
-                    <p className="text-xs text-gray-500">{userid}</p>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-150 flex items-center space-x-2"
-                  >
-                    <span>👋</span>
-                    <span>Logout</span>
-                  </button>
-                  <button
-                    onClick={handleDeleteAccount}
-                    className="w-full text-left px-4 py-3 text-red-500 hover:bg-red-100 transition-colors duration-150 flex items-center space-x-2"
-                  >
-                    <span>🗑️</span>
-                    <span>Delete Account</span>
-                  </button>
-
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                  <span>👋</span>
+                  <span>Logout</span>
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  className="w-full text-left px-4 py-3 text-red-500 hover:bg-red-100 transition-colors duration-150 flex items-center space-x-2"
+                >
+                  <span>🗑️</span>
+                  <span>Delete Account</span>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
+      </div>
 
-        {/* Content based on active section */}
-        <div className="min-h-[600px]">
-          {activeSection === 'home' && renderHomeSection()}
-          {activeSection === 'mood-history' && renderMoodHistorySection()}
-          {activeSection === 'ai-response' && renderAIResponseSection()}
-        </div>
-      </main>
-    </div>
-  );
+      {/* Content based on active section */}
+      <div className="min-h-[600px]">
+        {activeSection === 'home' && renderHomeSection()}
+        {activeSection === 'mood-history' && renderMoodHistorySection()}
+        {activeSection === 'ai-response' && renderAIResponseSection()}
+      </div>
+    </main>
+  </div>
+);
 }
