@@ -11,6 +11,7 @@ import AIResponseCard from '@/components/dashboard/AIResponseCard';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 
+
 // Types for our data
 interface JournalEntry {
   id: string;
@@ -38,12 +39,34 @@ export default function Dashboard() {
   const [aiResponse, setAIResponse] = useState<{ summary: string; suggestion: string } | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<'home' | 'mood-history' | 'ai-response'>('home');
-  
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+
   // History data
   const [journalHistory, setJournalHistory] = useState<JournalEntry[]>([]);
   const [aiHistory, setAiHistory] = useState<JournalEntry[]>([]);
   
   const router = useRouter();
+
+  const [renderSidebarContent, setRenderSidebarContent] = useState(true);
+
+  useEffect(() => {
+  let timeout: NodeJS.Timeout;
+
+  if (sidebarOpen) {
+    // Slight delay to wait until expand animation finishes before rendering contents
+    timeout = setTimeout(() => {
+      setRenderSidebarContent(true);
+    }, 300); // match with your animation duration
+  } else {
+    // Hide content immediately for collapsing
+    setRenderSidebarContent(false);
+  }
+
+  return () => clearTimeout(timeout);
+}, [sidebarOpen]);
+
+
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -580,105 +603,116 @@ setAIResponse({
   return (
   <div className="flex min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
     {/* Sidebar */}
-    <aside className="w-64 bg-white border-r shadow-lg p-6 hidden md:flex flex-col justify-between">
-      <div>
-        <h1 className="text-2xl font-bold text-blue-700 mb-8">
-          MindfulTrack<span className="text-xs align-super">®</span>
-        </h1>
-        <nav className="space-y-2">
-          <button
-            onClick={() => setActiveSection('home')}
-            className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
-              activeSection === 'home'
-                ? 'bg-blue-100 text-blue-700 font-semibold shadow-sm'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <span className="text-xl">🏠</span>
-            <span>Home</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSection('mood-history')}
-            className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
-              activeSection === 'mood-history'
-                ? 'bg-blue-100 text-blue-700 font-semibold shadow-sm'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <span className="text-xl">📖</span>
-            <span>Mood History</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSection('ai-response')}
-            className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
-              activeSection === 'ai-response'
-                ? 'bg-blue-100 text-blue-700 font-semibold shadow-sm'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <span className="text-xl">🤖</span>
-            <span>AI Response</span>
-          </button>
-        </nav>
-      </div>
-
-      {/* Footer with social links */}
-<div className="space-y-2 mt-10">
-  <div className="flex justify-center space-x-4">
-    <a
-      href="https://www.linkedin.com/in/syed-muhammad-ahmed-khalid-6b8611336"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="hover:opacity-80 transition-opacity"
+    <motion.aside
+      initial={{ width: 0 }}
+      animate={{ width: sidebarOpen ? 256 : 0 }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      className="bg-white border-r shadow-lg p-6 overflow-hidden flex flex-col justify-between"
     >
-      <svg
-        className="w-5 h-5 text-blue-600"
-        fill="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path d="M19 0h-14C2.24 0 0 2.24 0 5v14c0 2.76 2.24 5 5 5h14c2.76 0 5-2.24 5-5V5c0-2.76-2.24-5-5-5zm-11 19H5v-9h3v9zm-1.5-10.3C5.53 8.7 4.75 7.91 4.75 7S5.53 5.3 6.5 5.3 8.25 6.09 8.25 7 7.47 8.7 6.5 8.7zm13.5 10.3h-3v-4.7c0-1.13-.02-2.58-1.57-2.58-1.57 0-1.81 1.23-1.81 2.5v4.8h-3v-9h2.88v1.23h.04c.4-.76 1.38-1.56 2.83-1.56 3.03 0 3.59 1.99 3.59 4.58v4.75z" />
-      </svg>
-    </a>
+      {renderSidebarContent && (
+        <>
+          <div>
+            <h1 className="text-2xl font-bold text-blue-700 mb-8">
+              MindfulTrack<span className="text-xs align-super">®</span>
+            </h1>
+            <nav className="space-y-2">
+              <button
+                onClick={() => setActiveSection('home')}
+                className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
+                  activeSection === 'home'
+                    ? 'bg-blue-100 text-blue-700 font-semibold shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">🏠</span>
+                <span>Home</span>
+              </button>
 
-    <a
-      href="https://github.com/BlackSMAK"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="hover:opacity-80 transition-opacity"
-    >
-      <svg
-        className="w-5 h-5 text-gray-800"
-        fill="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path d="M12 0.3C5.37 0.3 0 5.67 0 12.3c0 5.29 3.44 9.78 8.21 11.38.6.11.82-.26.82-.58 0-.29-.01-1.05-.02-2.06-3.34.73-4.04-1.61-4.04-1.61-.55-1.41-1.35-1.79-1.35-1.79-1.1-.75.08-.74.08-.74 1.21.09 1.84 1.24 1.84 1.24 1.08 1.84 2.83 1.31 3.52 1 .11-.78.42-1.31.76-1.61-2.67-.31-5.47-1.34-5.47-5.96 0-1.32.47-2.4 1.24-3.25-.13-.31-.54-1.56.12-3.26 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02 0 2.05.14 3 .4 2.28-1.55 3.3-1.23 3.3-1.23.66 1.7.25 2.95.12 3.26.77.85 1.24 1.93 1.24 3.25 0 4.63-2.81 5.64-5.49 5.94.43.38.81 1.1.81 2.22 0 1.6-.01 2.89-.01 3.28 0 .32.22.7.83.58A12.01 12.01 0 0 0 24 12.3C24 5.67 18.63 0.3 12 0.3z" />
-      </svg>
-    </a>
+              <button
+                onClick={() => setActiveSection('mood-history')}
+                className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
+                  activeSection === 'mood-history'
+                    ? 'bg-blue-100 text-blue-700 font-semibold shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">📖</span>
+                <span>Mood History</span>
+              </button>
 
-    <a
-  href="https://www.kaggle.com/smak17"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="text-blue-500 font-bold text-lg hover:text-blue-700 transition-colors"
->
-  k
-</a>
+              <button
+                onClick={() => setActiveSection('ai-response')}
+                className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
+                  activeSection === 'ai-response'
+                    ? 'bg-blue-100 text-blue-700 font-semibold shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">🤖</span>
+                <span>AI Response</span>
+              </button>
+            </nav>
+          </div>
 
+          {/* Footer with social links */}
+          <div className="space-y-2 mt-10">
+            <div className="flex justify-center space-x-4">
+              <a
+                href="https://www.linkedin.com/in/syed-muhammad-ahmed-khalid-6b8611336"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition-opacity"
+              >
+                <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19 0h-14C2.24 0 0 2.24 0 5v14c0 2.76 2.24 5 5 5h14c2.76 0 5-2.24 5-5V5c0-2.76-2.24-5-5-5zm-11 19H5v-9h3v9zm-1.5-10.3C5.53 8.7 4.75 7.91 4.75 7S5.53 5.3 6.5 5.3 8.25 6.09 8.25 7 7.47 8.7 6.5 8.7zm13.5 10.3h-3v-4.7c0-1.13-.02-2.58-1.57-2.58-1.57 0-1.81 1.23-1.81 2.5v4.8h-3v-9h2.88v1.23h.04c.4-.76 1.38-1.56 2.83-1.56 3.03 0 3.59 1.99 3.59 4.58v4.75z" />
+                </svg>
+              </a>
+              <a
+                href="https://github.com/BlackSMAK"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition-opacity"
+              >
+                <svg className="w-5 h-5 text-gray-800" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0.3C5.37 0.3 0 5.67 0 12.3c0 5.29 3.44 9.78 8.21 11.38.6.11.82-.26.82-.58 0-.29-.01-1.05-.02-2.06-3.34.73-4.04-1.61-4.04-1.61-.55-1.41-1.35-1.79-1.35-1.79-1.1-.75.08-.74.08-.74 1.21.09 1.84 1.24 1.84 1.24 1.08 1.84 2.83 1.31 3.52 1 .11-.78.42-1.31.76-1.61-2.67-.31-5.47-1.34-5.47-5.96 0-1.32.47-2.4 1.24-3.25-.13-.31-.54-1.56.12-3.26 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02 0 2.05.14 3 .4 2.28-1.55 3.3-1.23 3.3-1.23.66 1.7.25 2.95.12 3.26.77.85 1.24 1.93 1.24 3.25 0 4.63-2.81 5.64-5.49 5.94.43.38.81 1.1.81 2.22 0 1.6-.01 2.89-.01 3.28 0 .32.22.7.83.58A12.01 12.01 0 0 0 24 12.3C24 5.67 18.63 0.3 12 0.3z" />
+                </svg>
+              </a>
+              <a
+                href="https://www.kaggle.com/smak17"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 font-bold text-lg hover:text-blue-700 transition-colors"
+              >
+                k
+              </a>
+            </div>
+            <p className="text-xs text-gray-400 text-center">
+              © 2025 MindfulTrack<span className="align-super text-[0.6rem] ml-0.5">®</span>
+            </p>
+          </div>
+        </>
+      )}
+    </motion.aside>
 
-
-  </div>
-  <p className="text-xs text-gray-400 text-center">
-    © 2025 MindfulTrack<span className="align-super text-[0.6rem] ml-0.5">®</span>
-  </p>
-</div>
-
-    </aside>
-
-    {/* Main */}
+    {/* Main content */}
     <main className="flex-1 p-6 md:p-10">
       <div className="flex justify-between items-center mb-8">
+        {/* Toggle Sidebar Button */}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="text-gray-600 hover:text-blue-600 focus:outline-none transition-transform mr-4"
+        >
+          <motion.div
+            initial={false}
+            animate={sidebarOpen ? { rotate: 90 } : { rotate: 0 }}
+            transition={{ duration: 0.2 }}
+            className="text-2xl"
+          >
+            ☰
+          </motion.div>
+        </button>
+
+        {/* Welcome and context */}
         <div className="text-center w-full md:w-auto">
           <p className="text-sm text-gray-500">
             {today.toLocaleDateString('en-US', {
@@ -697,6 +731,7 @@ setAIResponse({
           </p>
         </div>
 
+        {/* Profile dropdown */}
         <div className="relative">
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -739,7 +774,7 @@ setAIResponse({
         </div>
       </div>
 
-      {/* Content based on active section */}
+      {/* Section content */}
       <div className="min-h-[600px]">
         {activeSection === 'home' && renderHomeSection()}
         {activeSection === 'mood-history' && renderMoodHistorySection()}
@@ -748,4 +783,7 @@ setAIResponse({
     </main>
   </div>
 );
+
+
+
 }
