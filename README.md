@@ -1,40 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# MindfulTrack
 
-## Getting Started
+**MindfulTrack** is a sleek and intuitive mental health tracker designed to help users monitor their emotional well-being over time. Built with **Next.js**, **Supabase**, and **Framer Motion**, it offers mood logging, historical insights, AI-generated suggestions, and a stylish, responsive interface.
 
-First, run the development server:
+## Features
+
+- **Log Daily Mood**  
+  Record how you're feeling each day with a mood selector and optional notes.
+
+- **Mood Trends & History**  
+  Visualize your emotions across the week with interactive charts and logs.
+
+- **AI Response Section**  
+  Get dynamic suggestions or encouragement based on your recent moods.
+
+- **Supabase Auth & Data**  
+  Secure login, mood history storage, and real-time syncing with Supabase.
+
+- **Animated UI**  
+  Smooth transitions and a beautiful layout using Tailwind CSS + Framer Motion.
+
+---
+
+## Tech Stack
+
+| Category        | Technology           |
+|----------------|----------------------|
+| Frontend       | Next.js, React, Tailwind CSS |
+| Animations     | Framer Motion        |
+| Backend        | Supabase (Database & Auth) |
+| Hosting        | Vercel               |
+
+---
+
+## Installation & Running Locally
 
 ```bash
+# 1. Clone the repository
+git clone https://github.com/your-username/mindfultrack.git
+cd mindfultrack
+
+# 2. Install dependencies
+npm install
+
+# 3. Create `.env.local` with Supabase keys
+NEXT_PUBLIC_SUPABASE_URL=your_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+
+# 4. Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 to view it in your browser.
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
-
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
-
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
